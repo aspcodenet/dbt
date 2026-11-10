@@ -32,6 +32,14 @@ create table if not exists raw.orders (
     status       varchar(50)
 );
 
+create table if not exists raw.order_items (
+    order_item_id integer primary key,
+    order_id      integer references raw.orders (order_id),
+    product_id    varchar(50) references raw.products (product_id),
+    quantity      integer,
+    unit_price    decimal(10, 2)
+);
+
 -- ---------------------------------------------------------------------------
 -- Demodata: kunder
 -- (kund 5 saknar e-post och kund 6 har skiftande versaler -> testar coalesce/lower)
@@ -70,10 +78,29 @@ values
     (1003, 2, '2024-03-11',  899.00, 'shipped'),
     (1004, 3, '2024-03-15', 1290.00, 'completed'),
     (1005, 4, '2024-03-22',  199.00, 'pending'),
-    (1006, 4, '2024-04-02',  699.90, 'cancelled'),
-    (1007, 6, '2024-04-09', 1589.00, 'shipped'),
+    (1006, 4, '2024-04-02',  599.90, 'cancelled'),
+    (1007, 6, '2024-04-09', 1539.50, 'shipped'),
     (1008, 5, '2024-04-14',  349.95, null)
 on conflict (order_id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Demodata: orderrader
+-- Radsummorna är avsiktligt lika ordrarnas total_amount (quantity * unit_price).
+-- Rad 6 (order 1006) är såld under listpris, så intermediate-modellen får en
+-- rabatt att räkna på.
+-- ---------------------------------------------------------------------------
+insert into raw.order_items (order_item_id, order_id, product_id, quantity, unit_price)
+values
+    (1, 1001, 'P-100', 1, 499.00),
+    (2, 1002, 'P-101', 1, 249.50),
+    (3, 1003, 'P-102', 1, 899.00),
+    (4, 1004, 'P-104', 1, 1290.00),
+    (5, 1005, 'P-103', 1, 199.00),
+    (6, 1006, 'P-105', 2, 299.95),
+    (7, 1007, 'P-104', 1, 1290.00),
+    (8, 1007, 'P-101', 1, 249.50),
+    (9, 1008, 'P-105', 1, 349.95)
+on conflict (order_item_id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Snabbkontroll
@@ -82,4 +109,6 @@ select 'customers' as tabell, count(*) as antal from raw.customers
 union all
 select 'products',            count(*) from raw.products
 union all
-select 'orders',              count(*) from raw.orders;
+select 'orders',              count(*) from raw.orders
+union all
+select 'order_items',         count(*) from raw.order_items;
