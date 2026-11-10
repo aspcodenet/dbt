@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: ordersystem
+    database: dbtdemo
+    schema: raw
+    tables:
+      - name: orders
+      - name: customers
+      - name: products
